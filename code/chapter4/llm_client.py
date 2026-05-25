@@ -4,7 +4,12 @@ from dotenv import load_dotenv
 from typing import List, Dict
 
 # 加载 .env 文件中的环境变量
-load_dotenv()
+env_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../api_key/.env_chap4")
+)
+if not os.path.exists(env_path):
+    raise FileNotFoundError(f".env 文件不存在: {env_path}")
+load_dotenv(env_path)
 
 class HelloAgentsLLM:
     """
@@ -42,6 +47,9 @@ class HelloAgentsLLM:
             print("✅ 大语言模型响应成功:")
             collected_content = []
             for chunk in response:
+                # 实测API返回可能有格式问题，增加判断chunk是否有choices的逻辑，以免出现调用错误
+                if not getattr(chunk, "choices", None):
+                    continue
                 content = chunk.choices[0].delta.content or ""
                 print(content, end="", flush=True)
                 collected_content.append(content)

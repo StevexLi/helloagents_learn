@@ -1,8 +1,13 @@
 from dotenv import load_dotenv
-# 加载 .env 文件中的环境变量
-load_dotenv()
-
 import os
+# 加载 .env 文件中的环境变量
+env_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../api_key/.env_chap4")
+)
+if not os.path.exists(env_path):
+    raise FileNotFoundError(f".env 文件不存在: {env_path}")
+load_dotenv(env_path)
+
 from serpapi import SerpApiClient
 from typing import Dict, Any
 
