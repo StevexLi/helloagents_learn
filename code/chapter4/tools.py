@@ -10,6 +10,75 @@ load_dotenv(env_path)
 
 from serpapi import SerpApiClient
 from typing import Dict, Any
+import math
+
+def calculator(expr: str) -> str:
+    """
+    一个基于python的eval()函数的计算器工具。
+    会读取字符串形式的表达式，返回字符串形式的计算结果。
+    """
+    # 定义eval可以访问的函数和常量，防止执行危险操作
+    SAFE_GLOBALS = {"__builtins__":{}}
+    SAFE_NAMES = {
+    "abs": abs,
+    "round": round,
+    "pow": pow,
+    "sqrt": math.sqrt,
+    "sin": math.sin,
+    "cos": math.cos,
+    "tan": math.tan,
+    "log": math.log,
+    "pi": math.pi,
+    "e": math.e,
+    }
+    try:
+        # 先去掉空格并统一字母大小写，再将常见数学符号转换为Python eval可识别的运算符
+        if isinstance(expr, str):
+            expr = (
+                expr.lower()
+                .replace(" ", "")
+                .replace("（", "")
+                .replace("）", "")
+                .replace("×", "*")
+                .replace("✖️", "*")
+                .replace("✖", "*")
+                .replace("÷", "/")
+                .replace("➗", "/")
+                .replace("π", "pi")
+            )
+        
+        print(expr)
+
+        result = eval(expr, SAFE_GLOBALS, SAFE_NAMES)
+
+        # 如果计算结果出现无穷大或者nan，进行拦截
+        if isinstance(result, float):
+            if math.isinf(result):
+                return "错误：计算结果为无穷大，超出可表示范围。"
+            if math.isnan(result):
+                return "错误：计算结果不是有效数字。"
+            
+        return str(result)
+    
+    # 抛出不合法错误
+    except SyntaxError:
+        return "错误：表达式语法不合法。"
+    except NameError as e:
+        return f"错误：使用了不允许或未定义的名称：{e}"
+    except ZeroDivisionError:
+        return "错误：除数不能为0。"
+    except ValueError as e:
+        return f"错误：数学定义域不合法：{e}"
+    except OverflowError:
+        return "错误：计算结果超出数值范围。"
+    except TypeError as e:
+        return f"错误：表达式类型或函数参数不正确：{e}"
+    except MemoryError:
+        return "错误：计算消耗内存过大。"
+    except RecursionError:
+        return "错误：表达式嵌套过深。"
+    except Exception as e:
+        return f"错误：计算失败：{type(e).__name__}: {e}"
 
 def search(query: str) -> str:
     """
@@ -96,15 +165,21 @@ if __name__ == '__main__':
     # 2. 注册我们的实战搜索工具
     search_description = "一个网页搜索引擎。当你需要回答关于时事、事实以及在你的知识库中找不到的信息时，应使用此工具。"
     toolExecutor.registerTool("Search", search_description, search)
+    calculator_description = "一个计算器。当你需要进行数学计算，应使用此工具。"
+    toolExecutor.registerTool("Calculate", calculator_description, calculator)
     
     # 3. 打印可用的工具
     print("\n--- 可用的工具 ---")
     print(toolExecutor.getAvailableTools())
 
     # 4. 智能体的Action调用，这次我们问一个实时性的问题
-    print("\n--- 执行 Action: Search['英伟达最新的GPU型号是什么'] ---")
-    tool_name = "Search"
-    tool_input = "英伟达最新的GPU型号是什么"
+    # print("\n--- 执行 Action: Search['英伟达最新的GPU型号是什么'] ---")
+    # tool_name = "Search"
+    # tool_input = "英伟达最新的GPU型号是什么"
+    
+    print("\n--- 执行 Action: Calculate['(123 + 456) ✖️ 789 ÷12'] ---")
+    tool_name = "Calculate"
+    tool_input = "sin(123 + 456) ✖️ 789 ÷12"
 
     tool_function = toolExecutor.getTool(tool_name)
     if tool_function:
